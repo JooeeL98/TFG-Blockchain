@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockchain App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .container {
+      text-align: center;
+    }
+
+    .btn {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 12px;
+    }
+
+    .btn:hover {
+      background-color: #45a049;
+    }
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f1f1f1;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      color: black;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .form-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .form-container input, .form-container textarea {
+      margin: 5px 0;
+      padding: 10px;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bienvenido a la Blockchain App</h1>
+    <div class="dropdown">
+      <button class="btn dropdown-toggle">Transacción</button>
+      <div class="dropdown-content">
+        <a href="#" onclick="showForm('crear')">crear archivo</a>
+        <a href="#" onclick="showForm('acceder')">acceder archivo</a>
+        <a href="#" onclick="showForm('eliminar')">eliminar archivo</a>
+        <a href="#" onclick="showForm('modificar_nombre')">modificar nombre</a>
+        <a href="#" onclick="showForm('modificar_documento')">modificar documento</a>
+      </div>
+    </div>
+    <button class="btn" onclick="window.location.href='/get_chain'">Get Chain</button>
+    <button class="btn" onclick="window.location.href='/mine_block'">Mine Block</button>
+    <button class="btn" onclick="window.location.href='/is_valid'">Validate Block</button>
+    <button class="btn" onclick="window.location.href='/replace_chain'">Update Chain</button>
+    <button class="btn" onclick="window.location.href='/view_data'">View Data</button>
+    <button class="btn" onclick="showNodeForm()">Connect Node</button>
+  </div>
+
+  <div id="form-container" class="form-container">
+    <h2 id="form-title"></h2>
+    <form id="transaction-form" onsubmit="submitForm(event)">
+      <input type="hidden" id="accion" name="accion">
+      <input type="hidden" id="receiver" name="receiver" value="Central">
+      <div id="additional-fields"></div>
+      <button type="submit" class="btn">Enviar Transacción</button>
+    </form>
+  </div>
+
+  <div id="node-form-container" class="form-container">
+    <h2>Connect Node</h2>
+    <form id="node-form" onsubmit="submitNodeForm(event)">
+      <input type="text" id="node_address" name="node_address" placeholder="Node Address" required>
+      <button type="submit" class="btn">Connect</button>
+    </form>
+  </div>
+
+  <script>
+    function showForm(action) {
+      const formContainer = document.getElementById('form-container');
+      const formTitle = document.getElementById('form-title');
+      const accionInput = document.getElementById('accion');
+      const additionalFields = document.getElementById('additional-fields');
+      
+      formContainer.style.display = 'flex';
+      accionInput.value = action;
+      additionalFields.innerHTML = '';
+
+      switch(action) {
+        case 'crear':
+          formTitle.textContent = 'crear archivo';
+          additionalFields.innerHTML = `
+            <input type="text" name="area" placeholder="Área" required>
+            <input type="text" name="documento" placeholder="Documento" required>
+            <input type="text" name="nombre" placeholder="Nombre" required>
+            <input type="date" name="fecha_creacion" placeholder="Fecha de Creación" required>
+            <textarea name="descripcion" placeholder="Descripción"></textarea>
+          `;
+          break;
+        case 'acceder':
+          formTitle.textContent = 'acceder Archivo';
+          additionalFields.innerHTML = `
+            <input type="text" name="nombre" placeholder="Nombre" required>
+          `;
+          break;
+        case 'eliminar':
+          formTitle.textContent = 'eliminar Archivo';
+          additionalFields.innerHTML = `
+            <input type="text" name="nombre" placeholder="Nombre" required>
+          `;
+          break;
+        case 'modificar_nombre':
+          formTitle.textContent = 'modificar nombre';
+          additionalFields.innerHTML = `
+            <input type="text" name="nombre" placeholder="Nombre" required>
+            <input type="text" name="nuevo_nombre" placeholder="Nuevo Nombre" required>
+          `;
+          break;
+        case 'modificar_documento':
+          formTitle.textContent = 'modificar documento';
+          additionalFields.innerHTML = `
+            <input type="text" name="nombre" placeholder="Nombre" required>
+            <input type="text" name="nuevo_documento" placeholder="Nuevo Documento" required>
+          `;
+          break;
+        default:
+          formContainer.style.display = 'none';
+      }
+    }
+
+    function submitForm(event) {
+      event.preventDefault();
+
+      const form = document.getElementById('transaction-form');
+      const formData = new FormData(form);
+      const data = {
+        receiver: formData.get('receiver'),
+        movimiento: {
+          accion: formData.get('accion'),
+          area: formData.get('area'),
+          documento: formData.get('documento'),
+          nombre: formData.get('nombre'),
+          fecha_creacion: formData.get('fecha_creacion'),
+          descripcion: formData.get('descripcion'),
+          nuevo_nombre: formData.get('nuevo_nombre'),
+          nuevo_documento: formData.get('nuevo_documento')
+        }
+      };
+
+      fetch('/add_transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.message);
+        form.reset();
+        document.getElementById('form-container').style.display = 'none';
+      })
+      .catch(error => console.error('Error:', error));
+    }
+
+    function showNodeForm() {
+      const nodeFormContainer = document.getElementById('node-form-container');
+      nodeFormContainer.style.display = 'flex';
+    }
+
+    function submitNodeForm(event) {
+      event.preventDefault();
+
+      const form = document.getElementById('node-form');
+      const nodeAddress = form.node_address.value;
+
+      fetch('/connect_node', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ nodes: [nodeAddress] })
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.message);
+        form.reset();
+        document.getElementById('node-form-container').style.display = 'none';
+      })
+      .catch(error => console.error('Error:', error));
+    }
+  </script>
+</body>
+</html>
